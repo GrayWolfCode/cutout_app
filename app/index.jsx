@@ -1,10 +1,24 @@
-import { Redirect } from "expo-router";
+import { useUser } from "@clerk/clerk-expo";
+import { useEffect } from "react";
+import { Redirect,useRootNavigationState } from "expo-router";
 import { Text, View } from "react-native";
 
 export default function Index() {
+
+  const {user} = useUser();
+  useEffect(()=>{
+    checkNavLoader()
+  },[])
+
+  const checkNavLoader=()=>{
+    if(!useRootNavigationState.key)
+      return null;
+  }
+
   return (
     <View>
-      <Redirect href={'/login'} />
+      {!user? <Redirect href={'/login'} />:
+      <Redirect href={'/(tabs)/home'} />}
     </View>
   );
 }
