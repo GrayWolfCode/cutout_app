@@ -1,7 +1,38 @@
-import {StyleSheet, View, Text, Image} from 'react-native'
+import {StyleSheet, View, Text, Image, TouchableOpacity} from 'react-native'
 import React from 'react'
 import Colors from './../../constants/Colors'
+import { Link } from 'expo-router'
+import { useOAuth } from '@clerk/clerk-expo'
+import * as Linking from 'expo-linking'
+import * as WebBrowser from 'expo-web-browser'
+
 export default function LoginScreen() {
+
+    useWarmUpBrowser()
+
+  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' })
+
+  const onPress = React.useCallback(async () => {
+    try {
+      const { createdSessionId, signIn, signUp, setActive } = await startOAuthFlow({
+        redirectUrl: Linking.createURL('/dashboard', { scheme: 'myapp' }),
+      })
+
+      // If sign in was successful, set the active session
+      if (createdSessionId) {
+        // setActive!({ session: createdSessionId })
+      } else {
+        // Use signIn or signUp returned from startOAuthFlow
+        // for next steps, such as MFA
+      }
+    } catch (err) {
+      // See https://clerk.com/docs/custom-flows/error-handling
+      // for more info on error handling
+      console.error(JSON.stringify(err, null, 2))
+    }
+  }, [])
+
+
     return (
         <View>
             <Image source={require('./../../assets/images/login.jpeg')}
@@ -25,13 +56,14 @@ export default function LoginScreen() {
                     textAlign: 'center'
                 }}>Create AI Art in Just on Click</Text>
 
-                <View style={styles.button}>
+                <TouchableOpacity onPress={onPress} 
+                style={styles.button}>
                     <Text style={{
                         textAlign: 'center', 
                         color: "white",
                         fontSize: 17
                         }}>Continue</Text>
-                </View>
+                </TouchableOpacity>
 
                 <Text style={{
                     textAlign: 'center',
@@ -60,3 +92,16 @@ const styles= StyleSheet.create({
         marginTop:20
     }
 })
+
+export const useWarmUpBrowser = () => {
+    React.useEffect(() => {
+      // Warm up the android browser to improve UX
+      // https://docs.expo.dev/guides/authentication/#improving-user-experience
+      void WebBrowser.warmUpAsync()
+      return () => {
+        void WebBrowser.coolDownAsync()
+      }
+    }, [])
+  }
+  
+  WebBrowser.maybeCompleteAuthSession()
